@@ -4,11 +4,14 @@ The party stands on one place. Every day your policy picks one neighbouring plac
 walks there. What happens depends on the kind of place:
 
   town     Safe. After a wipe the party wakes up in the last town it visited.
-  field    Random battles: the party earns EXP.
-  dungeon  Harder battles: twice the EXP of a field, and the first clear hands over its key items.
+  field    10 random battles: the party earns EXP.
+  dungeon  10 battles, plus a boss and key items the first time.
   event    Someone who trades: bring the key items they need and they hand over new ones.
   gate     A boss. It turns the party away until it holds the key items AND has the level.
            Beating the final gate wins the map.
+
+The numbers are FINAL FANTASY's: the EXP table and every place's EXP come from the NES game (via
+Disch's disassembly), and boss levels from RPGSite's FF1 boss guide. See README.md.
 
 Any place can also need key items (a port needs the ship) or other places cleared first. Without
 them the party is turned away: it stays where it was and the day is lost. A party below the level
@@ -23,23 +26,39 @@ import random
 from collections import deque
 
 WIPE_DAYS = 3
+BATTLES_PER_VISIT = 10
 HERE = os.path.dirname(os.path.abspath(__file__))
+# EXP a character needs to reach each level (index = level), FINAL FANTASY (NES)
+EXP_TO_REACH = [0, 0, 40, 196, 547, 1171, 2146, 3550, 5461, 7957, 11116, 15016, 19735, 25351, 31942, 39586,
+                48361, 58345, 69617, 82253, 96332, 111932, 129131, 148008, 168639, 191103, 215479, 241843,
+                270275, 300851, 333651, 366450, 399250, 432049, 464849, 497648, 530448, 563247, 596047,
+                628846, 661646, 694445, 727245, 760044, 792844, 825643, 858443, 891242, 924042, 956841, 989641]
 
 
-def exp_to_next(level):
-    """EXP needed to go from this level to the next."""
-    return 10 * level * level
+def level_for(exp):
+    """The level a character with this much EXP has (1 to 50)."""
+    level = 1
+    while level < 50 and exp >= EXP_TO_REACH[level + 1]:
+        level += 1
+    return level
 
 
 def battle_exp(place_level):
-    """EXP for one visit to a field of this level (dungeons pay double, bosses triple)."""
-    return 8 * max(1, place_level) ** 2
+    """Mean EXP of one battle at a place of this level. FF1's areas fit about 6 x level² (generated
+    maps use this; the FF1 map has each place's real number)."""
+    return 6 * max(1, place_level) ** 2
 
 
 class Place:
-    def __init__(self, name, kind, level=0, needs=(), after=(), gives=()):
+    """exp: EXP each character gets per visit (the battles' EXP is shared by the 4 characters).
+    boss_exp: EXP each character gets for the boss, the first time only."""
+
+    def __init__(self, name, kind, level=0, needs=(), after=(), gives=(), exp=None, boss_exp=None):
         self.name, self.kind, self.level = name, kind, level
         self.needs, self.after, self.gives = tuple(needs), tuple(after), tuple(gives)
+        fights = kind in ("field", "dungeon", "gate")
+        self.exp = exp if exp is not None else (BATTLES_PER_VISIT * battle_exp(level) // 4 if fights else 0)
+        self.boss_exp = boss_exp if boss_exp is not None else (45 * level if kind in ("dungeon", "gate") else 0)
         self.links = []
 
 
@@ -62,8 +81,8 @@ class Quest:
         path = name if name.endswith(".json") else os.path.join(HERE, "maps", name + ".json")
         with open(path, encoding="utf-8") as f:
             d = json.load(f)
-        places = [Place(p["name"], p["kind"], p.get("level", 0), p.get("needs", ()),
-                        p.get("after", ()), p.get("gives", ())) for p in d["places"]]
+        places = [Place(p["name"], p["kind"], p.get("level", 0), p.get("needs", ()), p.get("after", ()),
+                        p.get("gives", ()), p.get("exp"), p.get("boss_exp")) for p in d["places"]]
         return cls(places, d["links"], d["start"], d["final"], d["days"], d.get("title", name))
 
     def reset(self):
@@ -89,9 +108,7 @@ class Quest:
 
     def _gain(self, exp):
         self.exp += exp
-        while self.exp >= exp_to_next(self.level):
-            self.exp -= exp_to_next(self.level)
-            self.level += 1
+        self.level = max(self.level, level_for(self.exp))
 
     def _clear(self, p):
         self.cleared.add(p.name)
@@ -127,20 +144,19 @@ class Quest:
             msg += self._clear(p) if p.gives else ""
             self.cleared.add(name)
         elif p.kind == "field":
-            gain = battle_exp(p.level)
-            self._gain(gain)
-            msg += f" Battles: +{gain} EXP."
+            self._gain(p.exp)
+            msg += f" Battles: +{p.exp} EXP each."
         elif p.kind == "dungeon":
-            gain = 2 * battle_exp(p.level)
+            gain = p.exp + (p.boss_exp if name not in self.got else 0)
             self._gain(gain)
-            msg += f" Battles: +{gain} EXP." + self._clear(p)
+            msg += f" Battles: +{gain} EXP each." + self._clear(p)
         elif p.kind == "event":
             msg += self._clear(p)
         elif p.kind == "gate":
             if name not in self.cleared:
-                gain = 3 * battle_exp(p.level)
+                gain = p.exp + p.boss_exp
                 self._gain(gain)
-                msg += f" Boss beaten: +{gain} EXP." + self._clear(p)
+                msg += f" Boss beaten: +{gain} EXP each." + self._clear(p)
             if name == self.final:
                 self.won = True
                 msg += " The map is won!"
@@ -177,7 +193,8 @@ class View:
     def __init__(self, q):
         self.here = q.here
         self.day, self.days_left = q.day, q.days - q.day
-        self.level, self.exp, self.exp_next = q.level, q.exp, exp_to_next(q.level)
+        self.level, self.exp = q.level, q.exp                # EXP of each character, in total
+        self.exp_next = EXP_TO_REACH[min(q.level + 1, 50)]   # total EXP needed for the next level
         self.items = set(q.items)
         self.neighbors = list(q.places[q.here].links)
         names = set(q.visited) | {n for v in q.visited for n in q.places[v].links}
@@ -293,5 +310,5 @@ def generate(seed):
             links.append((rng.choice(spots).name, rng.choice(prev_spots).name))
         opener, prev_town, prev_spots, final = gate.gives, town, spots, gate.name
     links = list({tuple(sorted(e)) for e in links if e[0] != e[1]})
-    days = 70 * regions
+    days = 150 * regions
     return Quest(places, links, start, final, days, title=f"seed:{seed}")

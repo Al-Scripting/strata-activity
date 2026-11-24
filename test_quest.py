@@ -43,12 +43,17 @@ def test_turned_away_wiped_and_rewarded():
     assert q.here == "Cornelle Castle" and "level:3" in q.last
     q.level = 3
     q.move("Fiend Shrine")
-    assert q.items == {"Lute", "Bridge"} and q.level > 3
+    assert q.items == {"Lute", "Bridge"} and q.exp == 199 + 32   # 10 battles + Garland, shared by 4
     q.move("Cornelle Castle")
     q.level = 1
-    q.move("Pravok Port")                                  # a level 4 dungeon at LV 1: wiped
+    q.move("Pravok Port")                                  # a level 3 dungeon at LV 1: wiped
     assert q.here == "Cornelle Castle" and q.day == 5 + 3 and "Wiped" in q.last
     assert q.view().known["Fiend Shrine"].gives == ("Lute", "Bridge")
+
+
+def test_ff1_level_table():
+    from quest import level_for
+    assert level_for(39) == 1 and level_for(40) == 2 and level_for(11116) == 10 and level_for(10 ** 7) == 50
 
 
 def test_path_avoids_blocked_places():

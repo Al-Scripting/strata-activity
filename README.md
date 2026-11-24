@@ -28,19 +28,33 @@ The map is a graph of places. Every day you pick one neighbouring place and the 
 | Place | What happens |
 |---|---|
 | town | Safe. After a wipe the party wakes up in the last town it visited. Some towns hand over a key item. |
-| field | Battles: `8 x level²` EXP per visit. |
-| dungeon | Battles worth twice a field. The first clear hands over its key items. |
+| field | 10 random battles: EXP. |
+| dungeon | 10 battles, plus a boss and key items the first time. |
 | event | A person who trades: bring the key items they need and they give you new ones. |
-| gate | A boss. It turns you away until you hold its key items and have its level. Beating it pays 3x EXP. The final gate wins the map. |
+| gate | A boss. It turns you away until you hold its key items and have its level. The final gate wins the map. |
 
 - **Turned away:** a place you lack key items for (or a gate you are too weak for) costs a day, and you stay where you were.
 - **Wiped:** entering a field or dungeon below its level sends you to the last town and costs 3 extra days.
 - **Fog of war:** you only see places you have visited and their neighbours. You learn what a place gives only after you get it.
-- **Levels:** going from level L to L+1 takes `10 x L²` EXP.
+- **Levels and EXP are FINAL FANTASY's:** the NES level table (40 EXP for level 2, 11,116 for level 10, 96,332 for level 20), and a battle's EXP is shared by the 4 characters.
 
 `maps/ff1.json` is the FINAL FANTASY quest line from STRATA's `ff1_main` spec: 42 places from
-Cornelle Castle to Chaos, 250 days. The other 30 test maps are generated (`seed:1` to `seed:30`)
-with 4 to 6 regions and 70 days per region.
+Cornelle Castle to Chaos, 350 days. The other 30 test maps are generated (`seed:1` to `seed:30`)
+with 4 to 6 regions and 150 days per region.
+
+### Where the numbers come from
+
+| Number | Source |
+|---|---|
+| Level table | FINAL FANTASY (NES), read from Disch's FF1 disassembly |
+| EXP of each place | the mean EXP of one battle in that area of the NES game (its encounter tables and monsters, same disassembly), times 10 battles, shared by 4 |
+| Boss EXP | the boss's EXP in the NES game, shared by 4 |
+| Boss and dungeon levels | the recommended levels in RPGSite's FF1 boss guide (A. Donaldson, 2021): Garland 3, Marsh Cave 10, Astos 10, Vampire 12, Lich 16, Marilith 20, Evil Eye 21, Citadel 23, Kraken 25, Tiamat 34, Chaos 35 |
+| Field levels | our choice: the level of the boss that opens the field's region |
+| Generated maps | a battle at level L pays `6 x L²`, a fit to FF1's areas |
+
+Some real-game details carry over: the Power Peninsula pays about 7,000 EXP a visit at level 10,
+the famous place to grind in FF1, and Chaos pays nothing.
 
 ## Your policy
 
@@ -72,9 +86,10 @@ python run.py --map seed:7 --show --policy baselines:KeyChaser
 1. **Why does KeyChaser get stuck?** Run it on `ff1` with `--show`. Find the day it stops making
    progress and write two sentences on why at the top of `my_policy.py`. Hint: what does it never
    do? STRATA's real agent got stuck in a similar way, after 19 story steps.
-2. **Win the FF1 map** within 250 days.
+2. **Win the FF1 map** within 350 days.
 3. **Win all 31 test maps.** A rule tuned to FF1 can fail on generated maps.
-4. **Use fewer days.** Our own 10-line explorer wins all 31 with a mean of about 135 days. Beat it.
+4. **Use fewer days.** Our own 10-line explorer wins all 31 with a mean of about 285 days (235 on
+   the FF1 map). Beat it.
    Ideas: farm only when a gate needs it, farm where the EXP per day is highest, and don't walk
    back to a town between battles.
 5. **Stretch:**
@@ -93,5 +108,28 @@ When you are done, push to your fork and share the last line of `python run.py` 
 | a place that wants an item and gives nothing | Dragon King's Peak, which held the agent's objective for 2 hours |
 | a town you must visit to see the next boss | Onrak, which the route network had learned to avoid |
 
+## Compare: STRATA's agent in the real game
+
+The party level when each boss fell, for STRATA's agent in the real game (run of 20 to 23 November
+2026), RPGSite's recommended level, and our 10-line explorer on `maps/ff1.json`:
+
+| Step | Agent in the real game | Recommended | Explorer here |
+|---|---|---|---|
+| Garland | 4 | 2-3 | 3 |
+| Pirates | 6 | 3 | 4 |
+| Marsh Cave | 20 | 10 | 10 |
+| Astos | 20 | 10 | 10 |
+| Vampire (Earth Cavern) | 28 | 12 | 12 |
+| Lich | 36 | 16 | 16 |
+| Marilith | 38 | 20 | 20 |
+| Evil Eye (Ice Cavern) | 59 | 21 | 21 |
+| Trial Citadel | 61 | 23 | 23 |
+
+The real agent was about twice the recommended level. It kept fighting while our executor code was
+stuck: between Marilith and the Ice Cavern it spent 29 hours and gained 21 levels while we fixed
+the executor's Ice Cavern bugs. Can your policy reach Chaos near the recommended
+levels, or does it grind like the agent?
+
 The place and item names follow FINAL FANTASY's, in STRATA's own spelling. FINAL FANTASY is a
-trademark of Square Enix. This repo holds no game code, art or data from the game.
+trademark of Square Enix. This repo holds no game code or art; its numbers are facts read from a
+public disassembly of the NES game and a public guide.
