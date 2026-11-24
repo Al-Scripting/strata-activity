@@ -46,8 +46,8 @@ def main():
         won += ok
         days.append(used) if ok else None
         print(f"{name:<8} {'WON ' if ok else 'lost'} in {used:3} days" + ("  (policy crashed)" if err else ""))
-    mean = sum(days) / len(days) if days else float("nan")
-    print(f"\n{a.policy}: won {won}/{len(maps)} maps, mean {mean:.1f} days on the maps it won")
+    mean = f"mean {sum(days) / len(days):.1f} days on the maps it won" if days else "no map won yet"
+    print(f"\n{a.policy}: won {won}/{len(maps)} maps, {mean}")
 
 
 if __name__ == "__main__":
