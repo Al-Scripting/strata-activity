@@ -16,8 +16,8 @@ class KeyChaser:
     """Goes to the nearest known story place (dungeon, event or gate) it can enter and has not
     cleared. With none in sight it farms the strongest field or dungeon it can survive.
 
-    This is the rule STRATA's route objective used in the real game. Run it on the FF1 map with
-    --show and watch where it stops making progress, then work out why."""
+    A greedy rule that never explores. Run it on the FF1 map with --show and watch where it stops
+    making progress, then work out why."""
 
     def pick(self, view):
         story = [p for p in view.known.values()

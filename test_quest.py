@@ -67,6 +67,14 @@ def test_path_avoids_blocked_places():
     assert v.path_to("Nowhere") is None
 
 
+def test_learner_plays():
+    from learner import LearnedPolicy, FEATURES, fitness
+    from quest import play
+    q = play(LearnedPolicy([0.0] * len(FEATURES)), Quest.load("seed:3"))
+    assert q.over
+    assert isinstance(fitness([1.0, 1.0, 0.0, 0.0, 0.0, -1.0], [100]), float)
+
+
 if __name__ == "__main__":
     tests = [f for n, f in sorted(globals().items()) if n.startswith("test_")]
     for t in tests:
