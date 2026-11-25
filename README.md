@@ -110,7 +110,7 @@ the lecture that matters most, **exploring**.
 | `TODO` | What to write | From the lecture |
 |---|---|---|
 | 1 | Add a place to `targets` when you have **not visited** it yet, or it is a **story place** (`"dungeon"`, `"event"`, `"gate"`) you have **not cleared** | exploration vs exploitation |
-| 2 | Remove the `#` from the 4 lines given, so the agent walks to the **nearest** target | the route network picks a place, the executor walks there |
+| 2 | Delete the `# ` (hash and space) at the start of the 4 lines given, so the agent walks to the **nearest** target. In VS Code: select them and press <kbd>Ctrl</kbd>+<kbd>/</kbd> | the route network picks a place, the executor walks there |
 
 Watch your agent play the FF1 map:
 

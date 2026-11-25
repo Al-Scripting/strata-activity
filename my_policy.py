@@ -39,10 +39,12 @@ class Policy:
             #         Hint: p.visited, p.kind and p.cleared tell you what you need.
 
         # Step 2. Keep the ones you can walk to, and go to the nearest.
-        # TODO 2: reachable = [p for p in targets if view.path_to(p.name)]
-        #         if reachable:
-        #             best = min(reachable, key=lambda p: len(view.path_to(p.name)))
-        #             return view.path_to(best.name)[0]
+        # TODO 2: delete the "# " (hash and space) at the start of the 4 lines below.
+        #         In VS Code: select the 4 lines and press Ctrl+/ (Cmd+/ on a Mac).
+        # reachable = [p for p in targets if view.path_to(p.name)]
+        # if reachable:
+        #     best = min(reachable, key=lambda p: len(view.path_to(p.name)))
+        #     return view.path_to(best.name)[0]
 
         # Step 3. Nothing worth visiting? The party is too weak for the next boss, so grind for
         #         EXP and come back stronger (slide "Progress over the run"). farm() does it.
