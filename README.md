@@ -46,7 +46,7 @@ flowchart LR
    `github.com/<your-username>/strata-activity`.
 2. On **your fork**, open the **Actions** tab and press
    **I understand my workflows, go ahead and enable them**. GitHub turns off the grader on new
-   forks until you press this.
+   forks until you press this. (Only forks are graded: this starter repo's own check stays grey.)
 
 ### Step 2. Get the code on your computer
 
