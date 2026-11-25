@@ -30,12 +30,13 @@ class KeyChaser:
 
 
 def farm(view):
-    """Walk to the highest-level field or dungeon the party can survive, then bounce in and out."""
+    """Walk to the field or dungeon with the most EXP per visit that the party can survive, then
+    bounce in and out. (Places you have not visited yet count by their level.)"""
     spots = [p for p in view.known.values()
              if p.kind in ("field", "dungeon") and p.ok and (p.name == view.here or view.path_to(p.name))]
     if not spots:
         return view.neighbors[0]
-    best = max(spots, key=lambda p: p.level)
+    best = max(spots, key=lambda p: (p.exp is None or p.exp > 0, p.exp or 0, p.level))
     if best.name != view.here:
         return view.path_to(best.name)[0]
     # already there: step out to a safe neighbour, and come back tomorrow

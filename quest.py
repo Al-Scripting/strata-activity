@@ -177,6 +177,7 @@ class PlaceInfo:
         self.visited = name in q.visited
         self.cleared = name in q.cleared
         self.gives = p.gives if name in q.got else None       # None = not known yet
+        self.exp = p.exp if self.visited else None            # EXP per visit, known once visited
         self.blocked_by = q.blocked_by(name)                  # e.g. ["item:Crown", "level:10"]
         self.ok = not self.blocked_by                         # safe to enter right now
         # roads are known when one end has been visited
@@ -198,7 +199,7 @@ class View:
         self.items = set(q.items)
         self.neighbors = list(q.places[q.here].links)
         names = set(q.visited) | {n for v in q.visited for n in q.places[v].links}
-        self.known = {n: PlaceInfo(q, n) for n in names}
+        self.known = {n: PlaceInfo(q, n) for n in q.places if n in names}   # map order: same result every run
         self.final = q.final if q.final in names else None   # the last boss, once seen
         self.last = q.last                                   # what happened yesterday
 
@@ -309,6 +310,6 @@ def generate(seed):
         if r and rng.random() < 0.5:                          # a loop back to the last region
             links.append((rng.choice(spots).name, rng.choice(prev_spots).name))
         opener, prev_town, prev_spots, final = gate.gives, town, spots, gate.name
-    links = list({tuple(sorted(e)) for e in links if e[0] != e[1]})
+    links = sorted({tuple(sorted(e)) for e in links if e[0] != e[1]})   # sorted: a set's order changes every run
     days = 150 * regions
     return Quest(places, links, start, final, days, title=f"seed:{seed}")

@@ -1,48 +1,49 @@
-"""Your agent. Edit this file.
+"""Part 2: your agent. Fill in the two TODOs below, then run:  python grade.py
 
-Task 1, answer here in two sentences: why does baselines.KeyChaser get stuck on the FF1 map?
-    (your answer)
+Every day the game calls pick(view), and the party walks to the place you return. It must be one
+of view.neighbors. This is the route network's job from the lecture: given what the party knows,
+where next?
 
-Each day the game calls pick(view) and walks the party to the place you return. It must be one of
-view.neighbors. A new Policy is made for every map, so you can keep memory in self.
-
-What view gives you (see quest.py for the details):
+What view gives you (the details are in quest.py):
   view.here            where the party is
   view.neighbors       the places you can walk to today
   view.level, view.exp, view.exp_next, view.items, view.day, view.days_left
   view.known           {name: PlaceInfo} for every place you have seen. A PlaceInfo has
-                       .kind .level .needs .after .visited .cleared
-                       .gives       (None until you have got it)
-                       .blocked_by  e.g. ["item:Crown", "level:10"]; [] means you can enter
-                       .ok          True when blocked_by is empty
-                       .links       the roads you know from it
+                       .name .kind .level .visited .cleared
+                       .ok          True when the party can enter it right now
+                       .blocked_by  why not, e.g. ["item:Crown", "level:10"]
+                       .gives       its key items (None until you have got them)
+                       .exp         EXP per visit (None until you have been there)
   view.final           the name of the last boss once you have seen it, else None
-  view.path_to(name)   the shortest known safe path [next step, ..., name], or None
+  view.path_to(name)   the shortest safe path [next step, ..., name], or None
   view.last            what happened yesterday
 
-Run:  python run.py --map ff1 --show      (watch one map, day by day)
-      python run.py                       (your score on all 31 test maps)
+Watch your agent play:  python run.py --map ff1 --show
 """
 from baselines import farm
 
 
 class Policy:
     def __init__(self):
-        pass
+        pass                      # a new Policy is made for every map: keep memory in self
 
     def pick(self, view):
-        # Step 1. Make a list of places worth going to. A good start: places you can enter
-        # (p.ok) that you have not visited yet, and story places (dungeon, event, gate) you
-        # have not cleared. Skip view.here.
+        # Step 1. EXPLORE: list the places worth going to (slide "How the route network chooses").
+        #         Worth going to = a place you have not visited yet,
+        #                       or a story place ("dungeon", "event", "gate") you have not cleared.
         targets = []
         for p in view.known.values():
             if p.name == view.here or not p.ok:
-                continue
-            # TODO: append p to targets when it is new or an uncleared story place
+                continue          # skip where you are, and places you cannot enter yet
+            # TODO 1: if p is worth going to, add it:  targets.append(p)
+            #         Hint: p.visited, p.kind and p.cleared tell you what you need.
 
-        # Step 2. Keep only the ones you can walk to: view.path_to(p.name) is not None.
-        # Step 3. Go to the nearest one: return view.path_to(best.name)[0]
-        # TODO: steps 2 and 3
+        # Step 2. Keep the ones you can walk to, and go to the nearest.
+        # TODO 2: reachable = [p for p in targets if view.path_to(p.name)]
+        #         if reachable:
+        #             best = min(reachable, key=lambda p: len(view.path_to(p.name)))
+        #             return view.path_to(best.name)[0]
 
-        # Step 4. Nothing worth visiting? You are too weak for the next boss: farm EXP.
+        # Step 3. Nothing worth visiting? The party is too weak for the next boss, so grind for
+        #         EXP and come back stronger (slide "Progress over the run"). farm() does it.
         return farm(view)

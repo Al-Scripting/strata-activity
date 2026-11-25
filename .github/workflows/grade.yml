@@ -1,0 +1,16 @@
+# Grades your fork on every push: a green check mark means python grade.py passed.
+name: Autograde
+on: [push, workflow_dispatch]
+
+jobs:
+  grade:
+    name: grade.py
+    # the starter repo has no answers yet, so it is graded only when started by hand
+    if: github.repository != 'Al-Scripting/strata-activity' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python grade.py
